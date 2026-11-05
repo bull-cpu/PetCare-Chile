@@ -40,6 +40,9 @@ INSTALLED_APPS = [
 
     # Aplicaciones propias
     'servicios',
+    # Aplicaciones de Django
+    'usuarios',
+
 ]
 
 MIDDLEWARE = [
