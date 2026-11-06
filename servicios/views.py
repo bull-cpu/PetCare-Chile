@@ -1,3 +1,5 @@
+from django.contrib.auth.decorators import login_required, user_passes_test
+from .forms import ServicioForm
 from django.shortcuts import render, get_object_or_404, redirect
 from django.db.models import Q
 from django.core.paginator import Paginator
@@ -179,3 +181,91 @@ def vaciar_carrito(request):
     messages.success(request, "El carrito está vacío.")
 
     return redirect("ver_carrito")
+
+@login_required
+@user_passes_test(lambda usuario: usuario.is_staff, login_url="login")
+def administrar_servicios(request):
+    servicios = Servicio.objects.select_related(
+        "categoria"
+    ).order_by("nombre")
+
+    return render(
+        request,
+        "servicios/admin_servicios.html",
+        {"servicios": servicios}
+    )
+
+
+@login_required
+@user_passes_test(lambda usuario: usuario.is_staff, login_url="login")
+def crear_servicio(request):
+    if request.method == "POST":
+        form = ServicioForm(request.POST, request.FILES)
+
+        if form.is_valid():
+            form.save()
+            messages.success(
+                request,
+                "El servicio se creó correctamente."
+            )
+            return redirect("administrar_servicios")
+    else:
+        form = ServicioForm()
+
+    return render(
+        request,
+        "servicios/formulario_servicio.html",
+        {
+            "form": form,
+            "titulo": "Crear servicio"
+        }
+    )
+
+
+@login_required
+@user_passes_test(lambda usuario: usuario.is_staff, login_url="login")
+def editar_servicio(request, servicio_id):
+    servicio = get_object_or_404(Servicio, id=servicio_id)
+
+    if request.method == "POST":
+        form = ServicioForm(
+            request.POST,
+            request.FILES,
+            instance=servicio
+        )
+
+        if form.is_valid():
+            form.save()
+            messages.success(
+                request,
+                "El servicio se actualizó correctamente."
+            )
+            return redirect("administrar_servicios")
+    else:
+        form = ServicioForm(instance=servicio)
+
+    return render(
+        request,
+        "servicios/formulario_servicio.html",
+        {
+            "form": form,
+            "titulo": "Editar servicio"
+        }
+    )
+
+
+@login_required
+@user_passes_test(lambda usuario: usuario.is_staff, login_url="login")
+def eliminar_servicio(request, servicio_id):
+    servicio = get_object_or_404(Servicio, id=servicio_id)
+
+    if request.method == "POST":
+        servicio.activo = False
+        servicio.save()
+
+        messages.success(
+            request,
+            "El servicio fue desactivado correctamente."
+        )
+
+    return redirect("administrar_servicios")

@@ -1,0 +1,135 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Administrar servicios | PetCare Chile</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+
+<body class="bg-light">
+
+<nav class="navbar navbar-dark bg-success">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="{% url 'catalogo' %}">
+            🐾 PetCare Chile
+        </a>
+        <a href="{% url 'catalogo' %}" class="btn btn-outline-light">
+            Volver al catálogo
+        </a>
+    </div>
+</nav>
+
+<div class="container py-5">
+
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div>
+            <h2 class="fw-bold">Administrar servicios</h2>
+            <p class="text-muted mb-0">
+                Gestiona los servicios publicados en PetCare Chile.
+            </p>
+        </div>
+
+        <a href="{% url 'crear_servicio' %}" class="btn btn-success">
+            <i class="bi bi-plus-circle"></i>
+            Crear servicio
+        </a>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-success alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body">
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+
+                    <thead class="table-light">
+                        <tr>
+                            <th>Servicio</th>
+                            <th>Categoría</th>
+                            <th>Precio</th>
+                            <th>Estado</th>
+                            <th>Activo</th>
+                            <th class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for servicio in servicios %}
+                            <tr>
+                                <td>
+                                    <strong>{{ servicio.nombre }}</strong>
+                                    <br>
+                                    <small class="text-muted">
+                                        {{ servicio.codigo }}
+                                    </small>
+                                </td>
+
+                                <td>{{ servicio.categoria.nombre }}</td>
+
+                                <td>${{ servicio.precio|floatformat:0 }}</td>
+
+                                <td>{{ servicio.get_estado_display }}</td>
+
+                                <td>
+                                    {% if servicio.activo %}
+                                        <span class="badge bg-success">Sí</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">No</span>
+                                    {% endif %}
+                                </td>
+
+                                <td class="text-end">
+                                    <a href="{% url 'editar_servicio' servicio.id %}"
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-pencil"></i>
+                                        Editar
+                                    </a>
+
+                                    {% if servicio.activo %}
+                                        <form method="POST"
+                                              action="{% url 'eliminar_servicio' servicio.id %}"
+                                              class="d-inline">
+                                            {% csrf_token %}
+                                            <button type="submit"
+                                                    class="btn btn-sm btn-outline-danger"
+                                                    onclick="return confirm('¿Deseas desactivar este servicio?')">
+                                                <i class="bi bi-trash"></i>
+                                                Desactivar
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center py-4">
+                                    No hay servicios registrados.
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+
+                </table>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>

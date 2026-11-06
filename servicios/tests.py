@@ -1,4 +1,4 @@
-
+from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 
@@ -199,3 +199,108 @@ class CarritoTests(TestCase):
 
         self.assertEqual(respuesta.status_code, 404)
         self.assertNotIn("carrito", self.client.session)
+
+        from django.contrib.auth.models import User
+
+
+class CRUDServiciosTests(TestCase):
+
+    def setUp(self):
+        self.categoria = CategoriaServicio.objects.create(
+            nombre="Veterinaria",
+            descripcion="Servicios veterinarios",
+            activa=True
+        )
+
+        self.servicio = Servicio.objects.create(
+            categoria=self.categoria,
+            codigo="consulta-prueba",
+            nombre="Consulta de prueba",
+            descripcion="Servicio para pruebas CRUD",
+            precio=15000,
+            estado=Servicio.Estado.DISPONIBLE,
+            activo=True
+        )
+
+        self.admin = User.objects.create_user(
+            username="administrador",
+            password="ClavePrueba123",
+            is_staff=True
+        )
+
+    def test_administracion_requiere_inicio_sesion(self):
+        respuesta = self.client.get(
+            reverse("administrar_servicios")
+        )
+        self.assertEqual(respuesta.status_code, 302)
+
+    def test_administrador_puede_ver_servicios(self):
+        self.client.force_login(self.admin)
+
+        respuesta = self.client.get(
+            reverse("administrar_servicios")
+        )
+
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertContains(respuesta, "Consulta de prueba")
+
+    def test_administrador_puede_crear_servicio(self):
+        self.client.force_login(self.admin)
+
+        respuesta = self.client.post(
+            reverse("crear_servicio"),
+            {
+                "categoria": self.categoria.id,
+                "codigo": "nuevo-servicio",
+                "nombre": "Nuevo servicio",
+                "descripcion": "Descripción del servicio",
+                "precio": "20000",
+                "estado": Servicio.Estado.DISPONIBLE,
+                "activo": "on",
+            }
+        )
+
+        self.assertEqual(respuesta.status_code, 302)
+        self.assertTrue(
+            Servicio.objects.filter(codigo="nuevo-servicio").exists()
+        )
+
+    def test_administrador_puede_editar_servicio(self):
+        self.client.force_login(self.admin)
+
+        respuesta = self.client.post(
+            reverse(
+                "editar_servicio",
+                args=[self.servicio.id]
+            ),
+            {
+                "categoria": self.categoria.id,
+                "codigo": "consulta-prueba",
+                "nombre": "Servicio actualizado",
+                "descripcion": "Descripción actualizada",
+                "precio": "18000",
+                "estado": Servicio.Estado.DISPONIBLE,
+                "activo": "on",
+            }
+        )
+
+        self.assertEqual(respuesta.status_code, 302)
+
+        self.servicio.refresh_from_db()
+        self.assertEqual(self.servicio.nombre, "Servicio actualizado")
+        self.assertEqual(self.servicio.precio, 18000)
+
+    def test_administrador_puede_desactivar_servicio(self):
+        self.client.force_login(self.admin)
+
+        respuesta = self.client.post(
+            reverse(
+                "eliminar_servicio",
+                args=[self.servicio.id]
+            )
+        )
+
+        self.assertEqual(respuesta.status_code, 302)
+
+        self.servicio.refresh_from_db()
+        self.assertFalse(self.servicio.activo)
