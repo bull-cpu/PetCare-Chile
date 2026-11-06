@@ -55,11 +55,13 @@ def catalogo(request):
     return render(request, "servicios/catalogo.html", contexto)
 
 
+
 def detalle_servicio(request, codigo):
     servicio = get_object_or_404(
         Servicio,
         codigo=codigo,
         activo=True,
+        estado=Servicio.Estado.DISPONIBLE,
         categoria__activa=True
     )
 

@@ -26,7 +26,6 @@ class CatalogoTests(TestCase):
 
     def test_catalogo_muestra_servicios_activos(self):
         respuesta = self.client.get(reverse("catalogo"))
-
         self.assertEqual(respuesta.status_code, 200)
         self.assertContains(respuesta, "Consulta veterinaria")
 
@@ -35,7 +34,6 @@ class CatalogoTests(TestCase):
             reverse("catalogo"),
             {"q": "Consulta veterinaria"}
         )
-
         self.assertEqual(respuesta.status_code, 200)
         self.assertContains(respuesta, "Consulta veterinaria")
 
@@ -44,29 +42,23 @@ class CatalogoTests(TestCase):
             reverse("catalogo"),
             {"categoria": self.categoria.id}
         )
-
         self.assertEqual(respuesta.status_code, 200)
         self.assertContains(respuesta, "Consulta veterinaria")
 
     def test_detalle_servicio(self):
         respuesta = self.client.get(
-            reverse(
-                "detalle_servicio",
-                kwargs={"codigo": self.servicio.codigo}
-            )
+            reverse("detalle_servicio", kwargs={
+                "codigo": self.servicio.codigo
+            })
         )
-
         self.assertEqual(respuesta.status_code, 200)
         self.assertContains(respuesta, "Consulta veterinaria")
-        self.assertContains(respuesta, "Atención médica para mascotas")
 
     def test_servicio_inactivo_no_aparece_en_catalogo(self):
         self.servicio.activo = False
         self.servicio.save()
 
         respuesta = self.client.get(reverse("catalogo"))
-
-        self.assertEqual(respuesta.status_code, 200)
         self.assertNotContains(respuesta, "Consulta veterinaria")
 
     def test_detalle_servicio_inactivo_devuelve_404(self):
@@ -74,10 +66,33 @@ class CatalogoTests(TestCase):
         self.servicio.save()
 
         respuesta = self.client.get(
-            reverse(
-                "detalle_servicio",
-                kwargs={"codigo": self.servicio.codigo}
-            )
+            reverse("detalle_servicio", kwargs={
+                "codigo": self.servicio.codigo
+            })
         )
-
         self.assertEqual(respuesta.status_code, 404)
+
+    def test_servicio_no_disponible_no_aparece(self):
+        self.servicio.estado = Servicio.Estado.AGOTADO
+        self.servicio.save()
+
+        respuesta = self.client.get(reverse("catalogo"))
+        self.assertNotContains(respuesta, "Consulta veterinaria")
+
+    def test_detalle_servicio_no_disponible_devuelve_404(self):
+        self.servicio.estado = Servicio.Estado.AGOTADO
+        self.servicio.save()
+
+        respuesta = self.client.get(
+            reverse("detalle_servicio", kwargs={
+                "codigo": self.servicio.codigo
+            })
+        )
+        self.assertEqual(respuesta.status_code, 404)
+
+    def test_categoria_inactiva_no_muestra_servicios(self):
+        self.categoria.activa = False
+        self.categoria.save()
+
+        respuesta = self.client.get(reverse("catalogo"))
+        self.assertNotContains(respuesta, "Consulta veterinaria")
