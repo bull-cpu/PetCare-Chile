@@ -27,7 +27,7 @@ class PerfilUsuario(models.Model):
         default=Rol.CLIENTE
     )
 
-    def str(self):
+    def __str__(self):
         return f"{self.usuario.username} - {self.get_rol_display()}"
 
     class Meta:
