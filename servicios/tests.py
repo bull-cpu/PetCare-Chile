@@ -96,3 +96,106 @@ class CatalogoTests(TestCase):
 
         respuesta = self.client.get(reverse("catalogo"))
         self.assertNotContains(respuesta, "Consulta veterinaria")
+
+
+class CarritoTests(TestCase):
+
+    def setUp(self):
+        self.categoria = CategoriaServicio.objects.create(
+            nombre="Veterinaria",
+            descripcion="Servicios veterinarios",
+            activa=True
+        )
+
+        self.servicio = Servicio.objects.create(
+            categoria=self.categoria,
+            codigo="consulta-veterinaria",
+            nombre="Consulta veterinaria",
+            descripcion="Atención médica para mascotas",
+            precio=15000,
+            estado=Servicio.Estado.DISPONIBLE,
+            activo=True
+        )
+
+    def test_agregar_servicio_al_carrito(self):
+        respuesta = self.client.post(
+            reverse("agregar_carrito", kwargs={
+                "servicio_id": self.servicio.id
+            })
+        )
+
+        self.assertRedirects(respuesta, reverse("ver_carrito"))
+
+        carrito = self.client.session["carrito"]
+        self.assertEqual(carrito[str(self.servicio.id)], 1)
+
+    def test_agregar_mismo_servicio_aumenta_cantidad(self):
+        url = reverse("agregar_carrito", kwargs={
+            "servicio_id": self.servicio.id
+        })
+
+        self.client.post(url)
+        self.client.post(url)
+
+        carrito = self.client.session["carrito"]
+        self.assertEqual(carrito[str(self.servicio.id)], 2)
+
+    def test_actualizar_cantidad_del_carrito(self):
+        self.client.post(
+            reverse("agregar_carrito", kwargs={
+                "servicio_id": self.servicio.id
+            })
+        )
+
+        respuesta = self.client.post(
+            reverse("actualizar_carrito", kwargs={
+                "servicio_id": self.servicio.id
+            }),
+            {"cantidad": 3}
+        )
+
+        self.assertRedirects(respuesta, reverse("ver_carrito"))
+
+        carrito = self.client.session["carrito"]
+        self.assertEqual(carrito[str(self.servicio.id)], 3)
+
+    def test_eliminar_servicio_del_carrito(self):
+        self.client.post(
+            reverse("agregar_carrito", kwargs={
+                "servicio_id": self.servicio.id
+            })
+        )
+
+        self.client.post(
+            reverse("eliminar_carrito", kwargs={
+                "servicio_id": self.servicio.id
+            })
+        )
+
+        carrito = self.client.session["carrito"]
+        self.assertNotIn(str(self.servicio.id), carrito)
+
+    def test_vaciar_carrito(self):
+        self.client.post(
+            reverse("agregar_carrito", kwargs={
+                "servicio_id": self.servicio.id
+            })
+        )
+
+        respuesta = self.client.post(reverse("vaciar_carrito"))
+
+        self.assertRedirects(respuesta, reverse("ver_carrito"))
+        self.assertEqual(self.client.session["carrito"], {})
+
+    def test_no_se_puede_agregar_servicio_inactivo(self):
+        self.servicio.activo = False
+        self.servicio.save()
+
+        respuesta = self.client.post(
+            reverse("agregar_carrito", kwargs={
+                "servicio_id": self.servicio.id
+            })
+        )
+
+        self.assertEqual(respuesta.status_code, 404)
+        self.assertNotIn("carrito", self.client.session)

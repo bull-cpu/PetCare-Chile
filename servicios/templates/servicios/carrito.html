@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Mi carrito | PetCare Chile</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+
+<body class="bg-light">
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-success">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="/">
+            <i class="bi bi-heart-pulse"></i> PetCare Chile
+        </a>
+
+        <a href="/" class="btn btn-outline-light">
+            <i class="bi bi-arrow-left"></i> Volver al catálogo
+        </a>
+    </div>
+</nav>
+
+<div class="container py-5">
+
+    <div class="mb-4">
+        <h2 class="fw-bold">
+            <i class="bi bi-cart3 text-success"></i>
+            Mi carrito de solicitudes
+        </h2>
+
+        <p class="text-muted">
+            Revisa los servicios que deseas solicitar.
+        </p>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-success alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="btn-close"
+                        data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    {% if elementos %}
+
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-4">
+
+                {% for elemento in elementos %}
+
+                    <div class="row align-items-center py-3 border-bottom">
+
+                        <div class="col-md-5">
+                            <h5 class="fw-bold mb-1">
+                                {{ elemento.servicio.nombre }}
+                            </h5>
+
+                            <span class="badge bg-success-subtle text-success">
+                                {{ elemento.servicio.categoria.nombre }}
+                            </span>
+
+                            <p class="text-muted small mt-2 mb-0">
+                                Precio unitario:
+                                ${{ elemento.servicio.precio|floatformat:0 }}
+                            </p>
+                        </div>
+
+                        <div class="col-md-3">
+                            <form method="POST"
+                                  action="{% url 'actualizar_carrito' elemento.servicio.id %}">
+                                {% csrf_token %}
+
+                                <label class="form-label small">
+                                    Cantidad
+                                </label>
+
+                                <div class="input-group">
+                                    <input type="number"
+                                           name="cantidad"
+                                           value="{{ elemento.cantidad }}"
+                                           min="0"
+                                           max="99"
+                                           class="form-control"
+                                           required>
+
+                                    <button class="btn btn-outline-success"
+                                            type="submit">
+                                        <i class="bi bi-arrow-repeat"></i>
+                                    </button>
+                                </div>
+
+                                <small class="text-muted">
+                                    Usa 0 para eliminar.
+                                </small>
+                            </form>
+                        </div>
+
+                        <div class="col-md-2 mt-3 mt-md-0">
+                            <span class="fw-bold text-success">
+                                ${{ elemento.subtotal|floatformat:0 }}
+                            </span>
+                        </div>
+
+                        <div class="col-md-2 mt-3 mt-md-0 text-md-end">
+                            <form method="POST"
+                                  action="{% url 'eliminar_carrito' elemento.servicio.id %}">
+                                {% csrf_token %}
+
+                                <button type="submit"
+                                        class="btn btn-outline-danger btn-sm">
+                                    <i class="bi bi-trash"></i>
+                                    Eliminar
+                                </button>
+                            </form>
+                        </div>
+
+                    </div>
+
+                {% endfor %}
+
+                <div class="d-flex justify-content-between align-items-center mt-4">
+                    <h4 class="fw-bold">Total estimado</h4>
+
+                    <h3 class="fw-bold text-success">
+                        ${{ total|floatformat:0 }}
+                    </h3>
+                </div>
+
+                <div class="d-flex justify-content-between mt-4 flex-wrap gap-2">
+
+                    <a href="/" class="btn btn-outline-success">
+                        <i class="bi bi-plus-circle"></i>
+                        Agregar más servicios
+                    </a>
+
+                    <form method="POST" action="{% url 'vaciar_carrito' %}">
+                        {% csrf_token %}
+
+                        <button type="submit"
+                                class="btn btn-outline-danger">
+                            <i class="bi bi-trash"></i>
+                            Vaciar carrito
+                        </button>
+                    </form>
+
+                </div>
+
+            </div>
+        </div>
+
+    {% else %}
+
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body text-center py-5">
+
+                <i class="bi bi-cart-x text-secondary"
+                   style="font-size: 65px;"></i>
+
+                <h4 class="fw-bold mt-3">
+                    Tu carrito está vacío
+                </h4>
+
+                <p class="text-muted">
+                    Explora nuestro catálogo y agrega los servicios que necesitas.
+                </p>
+
+                <a href="/" class="btn btn-success mt-2">
+                    Explorar servicios
+                </a>
+
+            </div>
+        </div>
+
+    {% endif %}
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>
