@@ -317,10 +317,10 @@
 {% for servicio in servicios %}
     <div class="col-sm-6 col-lg-4">
 
-        <a href="{% url 'detalle_servicio' servicio.codigo %}"
-           class="text-decoration-none text-dark">
+        <div class="card servicio-card h-100">
 
-            <div class="card servicio-card h-100">
+            <a href="{% url 'detalle_servicio' servicio.codigo %}"
+               class="text-decoration-none text-dark">
 
                 {% if servicio.imagen %}
                     <img src="{{ servicio.imagen.url }}"
@@ -360,10 +360,19 @@
                     </div>
 
                 </div>
+            </a>
+
+            <div class="px-4 pb-4">
+                <form method="POST" action="{% url 'agregar_carrito' servicio.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="bi bi-cart-plus"></i>
+                        Agregar a solicitudes
+                    </button>
+                </form>
             </div>
 
-        </a>
-
+        </div>
     </div>
 
 {% empty %}
