@@ -1,5 +1,5 @@
 
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.db.models import Q
 from django.core.paginator import Paginator
 
@@ -53,3 +53,18 @@ def catalogo(request):
     }
 
     return render(request, "servicios/catalogo.html", contexto)
+
+
+def detalle_servicio(request, codigo):
+    servicio = get_object_or_404(
+        Servicio,
+        codigo=codigo,
+        activo=True,
+        categoria__activa=True
+    )
+
+    return render(
+        request,
+        "servicios/detalle.html",
+        {"servicio": servicio}
+    )
