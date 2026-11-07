@@ -1,8 +1,13 @@
+
+from decimal import Decimal
+
 from django.contrib.auth.models import User
-from django.test import TestCase
+from django.test import TestCase, RequestFactory
+from django.contrib.sessions.middleware import SessionMiddleware
 from django.urls import reverse
 
 from .models import CategoriaServicio, Servicio
+from .context_processors import resumen_carrito
 
 
 class CatalogoTests(TestCase):
@@ -200,8 +205,6 @@ class CarritoTests(TestCase):
         self.assertEqual(respuesta.status_code, 404)
         self.assertNotIn("carrito", self.client.session)
 
-        from django.contrib.auth.models import User
-
 
 class CRUDServiciosTests(TestCase):
 
@@ -304,3 +307,65 @@ class CRUDServiciosTests(TestCase):
 
         self.servicio.refresh_from_db()
         self.assertFalse(self.servicio.activo)
+
+
+class ResumenCarritoTests(TestCase):
+
+    def setUp(self):
+        self.factory = RequestFactory()
+
+        self.categoria = CategoriaServicio.objects.create(
+            nombre="Veterinaria",
+            descripcion="Servicios veterinarios",
+            activa=True
+        )
+
+        self.servicio = Servicio.objects.create(
+            categoria=self.categoria,
+            codigo="resumen-prueba",
+            nombre="Servicio de prueba",
+            descripcion="Servicio para probar el resumen",
+            precio=15000,
+            estado=Servicio.Estado.DISPONIBLE,
+            activo=True
+        )
+
+    def crear_request(self, carrito=None):
+        request = self.factory.get("/")
+        middleware = SessionMiddleware(lambda request: None)
+        middleware.process_request(request)
+        request.session.save()
+        request.session["carrito"] = carrito or {}
+        return request
+
+    def test_carrito_vacio(self):
+        resultado = resumen_carrito(self.crear_request())
+
+        self.assertEqual(resultado["carrito_resumen"], [])
+        self.assertEqual(resultado["carrito_cantidad"], 0)
+        self.assertEqual(resultado["carrito_total"], Decimal("0.00"))
+
+    def test_calcula_cantidad_y_total(self):
+        request = self.crear_request({
+            str(self.servicio.id): 2
+        })
+
+        resultado = resumen_carrito(request)
+
+        self.assertEqual(resultado["carrito_cantidad"], 2)
+        self.assertEqual(resultado["carrito_total"], Decimal("30000.00"))
+        self.assertEqual(len(resultado["carrito_resumen"]), 1)
+
+    def test_excluye_servicios_inactivos(self):
+        self.servicio.activo = False
+        self.servicio.save()
+
+        request = self.crear_request({
+            str(self.servicio.id): 2
+        })
+
+        resultado = resumen_carrito(request)
+
+        self.assertEqual(resultado["carrito_resumen"], [])
+        self.assertEqual(resultado["carrito_cantidad"], 0)
+        self.assertEqual(resultado["carrito_total"], Decimal("0.00"))
