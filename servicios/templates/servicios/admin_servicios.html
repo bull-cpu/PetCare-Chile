@@ -1,28 +1,9 @@
 
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Administrar servicios | PetCare Chile</title>
+{% extends "base.html" %}
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-</head>
+{% block title %}Administrar servicios | PetCare Chile{% endblock %}
 
-<body class="bg-light">
-
-<nav class="navbar navbar-dark bg-success">
-    <div class="container">
-        <a class="navbar-brand fw-bold" href="{% url 'catalogo' %}">
-            🐾 PetCare Chile
-        </a>
-        <a href="{% url 'catalogo' %}" class="btn btn-outline-light">
-            Volver al catálogo
-        </a>
-    </div>
-</nav>
-
+{% block content %}
 <div class="container py-5">
 
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
@@ -41,7 +22,7 @@
 
     {% if messages %}
         {% for message in messages %}
-            <div class="alert alert-success alert-dismissible fade show">
+            <div class="alert alert-{{ message.tags|default:'success' }} alert-dismissible fade show">
                 {{ message }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
@@ -50,7 +31,6 @@
 
     <div class="card border-0 shadow-sm rounded-4">
         <div class="card-body">
-
             <div class="table-responsive">
                 <table class="table table-hover align-middle">
 
@@ -123,13 +103,8 @@
 
                 </table>
             </div>
-
         </div>
     </div>
 
 </div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-</body>
-</html>
+{% endblock %}
