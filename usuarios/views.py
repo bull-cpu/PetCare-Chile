@@ -5,6 +5,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.decorators import login_required
 
 from .forms import RegistroUsuarioForm, EditarPerfilForm
+from .models import PerfilUsuario
 
 
 def registro(request):
@@ -50,9 +51,18 @@ def cerrar_sesion(request):
         return redirect("catalogo")
 
     return redirect("catalogo")
+
+
 @login_required
 def editar_perfil(request):
-    perfil = request.user.perfil
+    perfil, creado = PerfilUsuario.objects.get_or_create(
+        usuario=request.user,
+        defaults={
+            "rut": "",
+            "telefono": "",
+            "rol": PerfilUsuario.Rol.CLIENTE,
+        }
+    )
 
     if request.method == "POST":
         form = EditarPerfilForm(request.POST, instance=perfil)
@@ -64,7 +74,6 @@ def editar_perfil(request):
                 "Tu perfil se actualizó correctamente."
             )
             return redirect("editar_perfil")
-
     else:
         form = EditarPerfilForm(instance=perfil)
 
