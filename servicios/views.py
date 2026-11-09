@@ -1,11 +1,15 @@
-from django.contrib.auth.decorators import login_required, user_passes_test
-from .forms import ServicioForm
-from django.shortcuts import render, get_object_or_404, redirect
-from django.db.models import Q
-from django.core.paginator import Paginator
-from django.contrib import messages
+
+from functools import wraps
 from decimal import Decimal
 
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.views import redirect_to_login
+from django.core.paginator import Paginator
+from django.db.models import Q
+from django.shortcuts import render, get_object_or_404, redirect
+
+from .forms import ServicioForm
 from .models import CategoriaServicio, Servicio
 
 
@@ -70,6 +74,26 @@ def detalle_servicio(request, codigo):
     )
 
 
+# Protege todas las operaciones del carrito.
+def carrito_requiere_login(vista):
+    @wraps(vista)
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            messages.info(
+                request,
+                "Debes iniciar sesión para utilizar el carrito."
+            )
+            return redirect_to_login(
+                request.get_full_path(),
+                login_url="login"
+            )
+
+        return vista(request, *args, **kwargs)
+
+    return wrapper
+
+
+@carrito_requiere_login
 def ver_carrito(request):
     carrito = request.session.get("carrito", {})
     elementos = []
@@ -102,6 +126,7 @@ def ver_carrito(request):
     )
 
 
+@carrito_requiere_login
 def agregar_carrito(request, servicio_id):
     if request.method != "POST":
         return redirect("catalogo")
@@ -130,6 +155,7 @@ def agregar_carrito(request, servicio_id):
     return redirect("ver_carrito")
 
 
+@carrito_requiere_login
 def actualizar_carrito(request, servicio_id):
     if request.method != "POST":
         return redirect("ver_carrito")
@@ -156,6 +182,7 @@ def actualizar_carrito(request, servicio_id):
     return redirect("ver_carrito")
 
 
+@carrito_requiere_login
 def eliminar_carrito(request, servicio_id):
     if request.method != "POST":
         return redirect("ver_carrito")
@@ -171,6 +198,7 @@ def eliminar_carrito(request, servicio_id):
     return redirect("ver_carrito")
 
 
+@carrito_requiere_login
 def vaciar_carrito(request):
     if request.method != "POST":
         return redirect("ver_carrito")
@@ -182,6 +210,8 @@ def vaciar_carrito(request):
 
     return redirect("ver_carrito")
 
+
+# Administración de servicios: solo personal autorizado.
 @login_required
 @user_passes_test(lambda usuario: usuario.is_staff, login_url="login")
 def administrar_servicios(request):

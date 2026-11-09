@@ -281,14 +281,29 @@
                 </a>
 
                 <div class="px-4 pb-4">
-                    <form method="POST"
-                          action="{% url 'agregar_carrito' servicio.id %}">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-success w-100">
-                            <i class="bi bi-cart-plus"></i>
-                            Agregar a solicitudes
-                        </button>
-                    </form>
+
+                    {% if user.is_authenticated %}
+
+                        <form method="POST"
+                              action="{% url 'agregar_carrito' servicio.id %}">
+                            {% csrf_token %}
+
+                            <button type="submit" class="btn btn-success w-100">
+                                <i class="bi bi-cart-plus"></i>
+                                Agregar a solicitudes
+                            </button>
+                        </form>
+
+                    {% else %}
+
+                        <a href="{% url 'login' %}?next={% url 'catalogo' %}"
+                           class="btn btn-outline-success w-100">
+                            <i class="bi bi-box-arrow-in-right"></i>
+                            Inicia sesión para solicitar
+                        </a>
+
+                    {% endif %}
+
                 </div>
 
             </div>
