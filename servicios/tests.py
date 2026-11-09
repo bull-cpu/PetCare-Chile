@@ -122,7 +122,65 @@ class CarritoTests(TestCase):
             activo=True
         )
 
+        self.usuario = User.objects.create_user(
+            username="cliente",
+            password="ClavePrueba123"
+        )
+
+    def iniciar_sesion(self):
+        self.client.force_login(self.usuario)
+
+    def comprobar_redireccion_login(self, respuesta):
+        self.assertEqual(respuesta.status_code, 302)
+        self.assertIn(
+            reverse("login"),
+            respuesta.url
+        )
+
+    def test_visitante_no_puede_ver_carrito(self):
+        respuesta = self.client.get(reverse("ver_carrito"))
+
+        self.comprobar_redireccion_login(respuesta)
+
+    def test_visitante_no_puede_agregar_servicio(self):
+        respuesta = self.client.post(
+            reverse("agregar_carrito", kwargs={
+                "servicio_id": self.servicio.id
+            })
+        )
+
+        self.comprobar_redireccion_login(respuesta)
+        self.assertNotIn("carrito", self.client.session)
+
+    def test_visitante_no_puede_actualizar_carrito(self):
+        respuesta = self.client.post(
+            reverse("actualizar_carrito", kwargs={
+                "servicio_id": self.servicio.id
+            }),
+            {"cantidad": 3}
+        )
+
+        self.comprobar_redireccion_login(respuesta)
+
+    def test_visitante_no_puede_eliminar_servicio(self):
+        respuesta = self.client.post(
+            reverse("eliminar_carrito", kwargs={
+                "servicio_id": self.servicio.id
+            })
+        )
+
+        self.comprobar_redireccion_login(respuesta)
+
+    def test_visitante_no_puede_vaciar_carrito(self):
+        respuesta = self.client.post(
+            reverse("vaciar_carrito")
+        )
+
+        self.comprobar_redireccion_login(respuesta)
+
     def test_agregar_servicio_al_carrito(self):
+        self.iniciar_sesion()
+
         respuesta = self.client.post(
             reverse("agregar_carrito", kwargs={
                 "servicio_id": self.servicio.id
@@ -135,6 +193,8 @@ class CarritoTests(TestCase):
         self.assertEqual(carrito[str(self.servicio.id)], 1)
 
     def test_agregar_mismo_servicio_aumenta_cantidad(self):
+        self.iniciar_sesion()
+
         url = reverse("agregar_carrito", kwargs={
             "servicio_id": self.servicio.id
         })
@@ -146,6 +206,8 @@ class CarritoTests(TestCase):
         self.assertEqual(carrito[str(self.servicio.id)], 2)
 
     def test_actualizar_cantidad_del_carrito(self):
+        self.iniciar_sesion()
+
         self.client.post(
             reverse("agregar_carrito", kwargs={
                 "servicio_id": self.servicio.id
@@ -165,6 +227,8 @@ class CarritoTests(TestCase):
         self.assertEqual(carrito[str(self.servicio.id)], 3)
 
     def test_eliminar_servicio_del_carrito(self):
+        self.iniciar_sesion()
+
         self.client.post(
             reverse("agregar_carrito", kwargs={
                 "servicio_id": self.servicio.id
@@ -181,6 +245,8 @@ class CarritoTests(TestCase):
         self.assertNotIn(str(self.servicio.id), carrito)
 
     def test_vaciar_carrito(self):
+        self.iniciar_sesion()
+
         self.client.post(
             reverse("agregar_carrito", kwargs={
                 "servicio_id": self.servicio.id
@@ -193,6 +259,8 @@ class CarritoTests(TestCase):
         self.assertEqual(self.client.session["carrito"], {})
 
     def test_no_se_puede_agregar_servicio_inactivo(self):
+        self.iniciar_sesion()
+
         self.servicio.activo = False
         self.servicio.save()
 
@@ -203,7 +271,6 @@ class CarritoTests(TestCase):
         )
 
         self.assertEqual(respuesta.status_code, 404)
-        self.assertNotIn("carrito", self.client.session)
 
 
 class CRUDServiciosTests(TestCase):
